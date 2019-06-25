@@ -28,7 +28,7 @@ enum Turn {
 
 // 盤面とその盤面の価値を表します
 struct Valuation {
-  board: CrossAndKnotsBoard,
+  board: TicTacToeBoard,
   score: i32,
 }
 
@@ -46,7 +46,7 @@ type Cell = Option<Piece>;
 // 盤面を表現します
 // cellsは3*3のマルバツゲームの盤面を1次元配列にならしたものです.
 #[derive(Clone)]
-struct CrossAndKnotsBoard {
+struct TicTacToeBoard {
   cells: Vec<Cell>,
 }
 
@@ -57,13 +57,13 @@ struct WithIndex<T> {
   index: usize,
 }
 
-impl CrossAndKnotsBoard {
+impl TicTacToeBoard {
   pub fn new() -> Self {
     let mut cells = vec![];
     for _ in 0..3 * 3 {
       cells.push(None);
     }
-    CrossAndKnotsBoard { cells }
+    TicTacToeBoard { cells }
   }
 
   pub fn can_put(&self, index: usize) -> bool {
@@ -82,7 +82,7 @@ impl CrossAndKnotsBoard {
   }
 
   // 次に打つべきな最善手を取得します
-  pub fn get_next_best_board(&self) -> CrossAndKnotsBoard {
+  pub fn get_next_best_board(&self) -> TicTacToeBoard {
     self.minimax(0).board
   }
 
@@ -139,7 +139,7 @@ impl CrossAndKnotsBoard {
     }
   }
 
-  fn get_next_all_pattern_board(&self, board: &CrossAndKnotsBoard) -> Vec<CrossAndKnotsBoard> {
+  fn get_next_all_pattern_board(&self, board: &TicTacToeBoard) -> Vec<TicTacToeBoard> {
     if board.board_state() != BoardState::Playing {
       return Vec::new();
     }
@@ -266,7 +266,7 @@ fn get_cell_for_display(index: usize, cell: &Option<Piece>) -> String {
   }
 }
 
-fn show_board(board: &CrossAndKnotsBoard) {
+fn show_board(board: &TicTacToeBoard) {
   println!("------------");
   for i in 0..3 {
     let raw_num = i * 3;
@@ -293,7 +293,7 @@ fn read<T: FromStr>() -> T {
   token.parse().ok().expect("failed to parse token")
 }
 
-fn user_input(board: &CrossAndKnotsBoard) -> usize {
+fn user_input(board: &TicTacToeBoard) -> usize {
   loop {
     let index = read::<usize>();
     match board.can_put(index) {
@@ -320,7 +320,7 @@ fn is_start_by_player() -> bool {
 
 fn play_game() {
   let is_first_player = is_start_by_player();
-  let mut board = CrossAndKnotsBoard::new();
+  let mut board = TicTacToeBoard::new();
   println!("Ready play game");
   show_board(&board);
 
