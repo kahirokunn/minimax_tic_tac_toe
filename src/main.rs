@@ -283,7 +283,21 @@ fn user_input(board: &CrossAndKnotsBoard) -> usize {
   }
 }
 
+fn is_start_by_player() -> bool {
+  println!("Do you want to put the first piece?");
+  println!("0: No, 1: Yes");
+  loop {
+    let answer = read::<i32>();
+    match answer {
+      0 => return false,
+      1 => return true,
+      _ => println!("0: No, 1: Yes"),
+    }
+  }
+}
+
 fn play_game() {
+  let is_first_player = is_start_by_player();
   let mut board = CrossAndKnotsBoard::new();
   println!("Ready play game");
   show_board(&board);
@@ -291,28 +305,49 @@ fn play_game() {
   loop {
     match board.board_state() {
       BoardState::Playing => match board.who_can_put_next_piece() {
-        Turn::White => {
-          println!("CPU turn");
-          let tmp = board.get_next_best_board(0);
-          println!("score: {:?}", tmp.score);
-          board = tmp.board;
-        }
-        Turn::Black => {
-          println!("Your turn");
-          let index = user_input(&board);
-          board.put(index, Piece::Black);
-        }
+        Turn::White => match is_first_player {
+          true => {
+            println!("Your turn");
+            let index = user_input(&board);
+            board.put(index, Piece::White);
+          }
+          false => {
+            println!("CPU turn");
+            let tmp = board.get_next_best_board(0);
+            println!("score: {:?}", tmp.score);
+            board = tmp.board;
+          }
+        },
+        Turn::Black => match is_first_player {
+          false => {
+            println!("Your turn");
+            let index = user_input(&board);
+            board.put(index, Piece::Black);
+          }
+          true => {
+            println!("CPU turn");
+            let tmp = board.get_next_best_board(0);
+            println!("score: {:?}", tmp.score);
+            board = tmp.board;
+          }
+        },
       },
       BoardState::Draw => {
         println!("Draw");
         break;
       }
       BoardState::BlackWin => {
-        println!("You win");
+        match is_first_player {
+          true => println!("You lose"),
+          false => println!("You win"),
+        }
         break;
       }
       BoardState::WhiteWin => {
-        println!("You lose");
+        match is_first_player {
+          true => println!("You win"),
+          false => println!("You lose"),
+        }
         break;
       }
     };
