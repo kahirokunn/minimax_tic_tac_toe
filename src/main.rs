@@ -1,20 +1,16 @@
 use std::io::*;
 use std::str::FromStr;
 
-#[derive(PartialEq, Clone)]
-enum Piece {
-  White,
-  Black,
-}
-
+// その盤面の状態を表します
 #[derive(PartialEq, Clone)]
 enum BoardState {
-  Playing,
-  BlackWin,
-  WhiteWin,
-  Draw,
+  Playing,  // プレイ中
+  BlackWin, // 黒の勝ち
+  WhiteWin, // 白の勝ち
+  Draw,     // 引き分け
 }
 
+// 縦横斜めのラインの状態を表します
 #[derive(PartialEq, Clone)]
 enum LineState {
   BlackWin,
@@ -23,22 +19,39 @@ enum LineState {
   Draw,
 }
 
+// 誰のターンかを表します
 #[derive(PartialEq, Clone)]
 enum Turn {
   White,
   Black,
 }
 
+// 盤面とその盤面の価値を表します
 struct Valuation {
   board: CrossAndKnotsBoard,
   score: i32,
 }
 
-#[derive(Clone)]
-struct CrossAndKnotsBoard {
-  cells: Vec<Option<Piece>>,
+// 盤面のマス目の上に置く石を表します
+#[derive(PartialEq, Clone)]
+enum Piece {
+  White,
+  Black,
 }
 
+// マス目を表現します
+// マス目に何も置かれてなければNone, 置けれていればSome<Piece>
+type Cell = Option<Piece>;
+
+// 盤面を表現します
+// cellsは3*3のマルバツゲームの盤面を1次元配列にならしたものです.
+#[derive(Clone)]
+struct CrossAndKnotsBoard {
+  cells: Vec<Cell>,
+}
+
+// これは盤面とindexのペアを実現するために作りました.
+// これはなくても良いけど、あると便利だったので.
 struct WithIndex<T> {
   elem: T,
   index: usize,
@@ -61,16 +74,6 @@ impl CrossAndKnotsBoard {
     self.cells[index] = Some(piece);
   }
 
-  fn count_blank(&self) -> u8 {
-    let mut count = 0;
-    for cell in &self.cells {
-      if let None = cell {
-        count += 1;
-      }
-    }
-    count
-  }
-
   pub fn who_can_put_next_piece(&self) -> Turn {
     match self.count_blank() % 2 {
       1 => Turn::White,
@@ -78,7 +81,12 @@ impl CrossAndKnotsBoard {
     }
   }
 
-  pub fn get_next_best_board(&self, depth: i32) -> Valuation {
+  // 次に打つべきな最善手を取得します
+  pub fn get_next_best_board(&self) -> CrossAndKnotsBoard {
+    self.minimax(0).board
+  }
+
+  fn minimax(&self, depth: i32) -> Valuation {
     let boards = self.get_next_all_pattern_board(&self);
     if boards.len() == 0 {
       return self.calc_valuation(depth);
@@ -89,7 +97,7 @@ impl CrossAndKnotsBoard {
       .map(|board| {
         let _val = board.calc_valuation(depth);
         match _val.board.board_state() == BoardState::Playing {
-          true => _val.board.get_next_best_board(depth + 1),
+          true => _val.board.minimax(depth + 1),
           false => _val,
         }
       })
@@ -101,15 +109,23 @@ impl CrossAndKnotsBoard {
     // 次石置くのが自分なら最大を取る
     // 次石置くのが相手なら最小を取る (最小は相手が最も有利な手の為
     let val: Option<WithIndex<Valuation>> = match self.who_can_put_next_piece() {
-      Turn::White => vals.into_iter().fold(None, |max, v| match &max {
-        Some(WithIndex { elem, index: _ }) => match v.elem.score > elem.score {
+      // 最悪の手を取る
+      Turn::White => vals.into_iter().fold(None, |min, v| match &min {
+        Some(WithIndex {
+          elem: min_elem,
+          index: _,
+        }) => match v.elem.score > min_elem.score {
           true => Some(v),
-          false => max,
+          false => min,
         },
         None => Some(v),
       }),
+      // 最短で勝てる手を取る
       Turn::Black => vals.into_iter().fold(None, |max, v| match &max {
-        Some(WithIndex { elem, index: _ }) => match v.elem.score > elem.score {
+        Some(WithIndex {
+          elem: max_elem,
+          index: _,
+        }) => match v.elem.score > max_elem.score {
           true => max,
           false => Some(v),
         },
@@ -128,29 +144,21 @@ impl CrossAndKnotsBoard {
       return Vec::new();
     }
     let mut boards = vec![];
-    match board.who_can_put_next_piece() {
-      Turn::Black => {
-        for i in 0..9 {
-          if board.can_put(i) {
-            let mut clone = board.clone();
-            clone.put(i, Piece::Black);
-            boards.push(clone);
-          }
-        }
-      }
-      Turn::White => {
-        for i in 0..9 {
-          if board.can_put(i) {
-            let mut clone = board.clone();
-            clone.put(i, Piece::White);
-            boards.push(clone);
-          }
-        }
+    let piece = match board.who_can_put_next_piece() {
+      Turn::Black => Piece::Black,
+      Turn::White => Piece::White,
+    };
+    for i in 0..9 {
+      if board.can_put(i) {
+        let mut cloned_board = board.clone();
+        cloned_board.put(i, piece.clone());
+        boards.push(cloned_board);
       }
     }
     boards
   }
 
+  // 盤面単位の評価関数
   fn calc_valuation(&self, depth: i32) -> Valuation {
     let win_score = 99;
 
@@ -173,12 +181,22 @@ impl CrossAndKnotsBoard {
     }
   }
 
+  fn count_blank(&self) -> u8 {
+    let mut count = 0;
+    for cell in &self.cells {
+      if let None = cell {
+        count += 1;
+      }
+    }
+    count
+  }
+
   fn board_state(&self) -> BoardState {
     for col_num in 0..3 {
       let raw_num = col_num * 3;
 
-      // row
-      match self.judge(
+      // 横向きの線
+      match self.judge_for_line(
         &self.cells[raw_num],
         &self.cells[raw_num + 1],
         &self.cells[raw_num + 2],
@@ -188,8 +206,8 @@ impl CrossAndKnotsBoard {
         _ => (),
       };
 
-      // column
-      match self.judge(
+      // 縦向きの線
+      match self.judge_for_line(
         &self.cells[col_num],
         &self.cells[col_num + 3],
         &self.cells[col_num + 6],
@@ -200,26 +218,30 @@ impl CrossAndKnotsBoard {
       };
     }
     // 左上から右下にかける線
-    match self.judge(&self.cells[0], &self.cells[4], &self.cells[8]) {
+    match self.judge_for_line(&self.cells[0], &self.cells[4], &self.cells[8]) {
       LineState::BlackWin => return BoardState::BlackWin,
       LineState::WhiteWin => return BoardState::WhiteWin,
       _ => (),
     };
     // 右上から左下にかける線
-    match self.judge(&self.cells[2], &self.cells[4], &self.cells[6]) {
+    match self.judge_for_line(&self.cells[2], &self.cells[4], &self.cells[6]) {
       LineState::BlackWin => return BoardState::BlackWin,
       LineState::WhiteWin => return BoardState::WhiteWin,
       _ => (),
     };
+    // 全ての勝利パターンに該当せず、ここまですり抜けてきた
+    // 何も置かれていないマスがあったらプレイ中
     for cell in &self.cells {
       if let None = cell {
         return BoardState::Playing;
       }
     }
+    // 引き分け
     BoardState::Draw
   }
 
-  fn judge(&self, a: &Option<Piece>, b: &Option<Piece>, c: &Option<Piece>) -> LineState {
+  // ラインの為の評価関数
+  fn judge_for_line(&self, a: &Option<Piece>, b: &Option<Piece>, c: &Option<Piece>) -> LineState {
     if a.is_none() || b.is_none() || c.is_none() {
       return LineState::Playing;
     }
@@ -313,8 +335,7 @@ fn play_game() {
           }
           false => {
             println!("CPU turn");
-            let tmp = board.get_next_best_board(0);
-            board = tmp.board;
+            board = board.get_next_best_board();
           }
         },
         Turn::Black => match is_first_player {
@@ -325,8 +346,7 @@ fn play_game() {
           }
           true => {
             println!("CPU turn");
-            let tmp = board.get_next_best_board(0);
-            board = tmp.board;
+            board = board.get_next_best_board();
           }
         },
       },
