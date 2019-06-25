@@ -97,7 +97,7 @@ impl CrossAndKnotsBoard {
       .map(|(index, elem)| WithIndex { elem, index })
       .collect();
 
-    // minmaxの由来である
+    // minimaxの由来である
     // 次石置くのが自分なら最大を取る
     // 次石置くのが相手なら最小を取る (最小は相手が最も有利な手の為
     let val: Option<WithIndex<Valuation>> = match self.who_can_put_next_piece() {
@@ -314,7 +314,6 @@ fn play_game() {
           false => {
             println!("CPU turn");
             let tmp = board.get_next_best_board(0);
-            println!("score: {:?}", tmp.score);
             board = tmp.board;
           }
         },
@@ -327,7 +326,6 @@ fn play_game() {
           true => {
             println!("CPU turn");
             let tmp = board.get_next_best_board(0);
-            println!("score: {:?}", tmp.score);
             board = tmp.board;
           }
         },
