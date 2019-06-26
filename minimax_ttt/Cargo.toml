@@ -1,0 +1,22 @@
+[package]
+name = "minimax_ttt"
+version = "0.1.0"
+authors = ["k-okina <okinakahiro@gmail.com>"]
+edition = "2018"
+description = "minimax tic tac toe"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/kahirokunn/minimax_tic_tac_toe"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde_derive = "1.0.93"
+serde = { version = "1.0.93", features = ["derive"] }
+serde_json = "1.0.39"
+wasm-bindgen = { version = "0.2.34", features = ["serde-serialize"]  }
+wasm-bindgen-macro = "0.2.34"
+
+[profile.release]
+lto = true
+opt-level = "z"

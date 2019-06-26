@@ -5,3 +5,4 @@ authors = ["k-okina <okinakahiro@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+minimax_ttt = { path = "./minimax_ttt" }

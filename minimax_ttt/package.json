@@ -1,0 +1,30 @@
+{
+  "name": "minimax_ttt",
+  "collaborators": [
+    "k-okina <okinakahiro@gmail.com>"
+  ],
+  "description": "minimax tic tac toe",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kahirokunn/minimax_tic_tac_toe"
+  },
+  "files": [
+    "minimax_ttt.wasm",
+    "minimax_ttt.js",
+    "minimax_ttt.d.ts"
+  ],
+  "keywords": [
+    "minimax_ttt",
+    "minimax",
+    "tic tac toe"
+  ],
+  "module": "minimax_ttt.js",
+  "types": "minimax_ttt.d.ts",
+  "bugs": {
+    "url": "https://github.com/kahirokunn/minimax_tic_tac_toe/issues"
+  },
+  "homepage": "https://github.com/kahirokunn/minimax_tic_tac_toe",
+  "sideEffects": "false"
+}

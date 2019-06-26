@@ -99,13 +99,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ttt"
-version = "0.1.0"
-dependencies = [
- "minimax_ttt 0.1.0",
-]
-
-[[package]]
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
